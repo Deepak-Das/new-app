@@ -1,50 +1,19 @@
 import logo from './logo.svg';
 import './App.css';
 import Visualization from './componests/Visualization';
+import { datajson1, datajson2, datajson3 } from './componests/datesource';
+import VisualizationIcon from './componests/VisualizationIcon';
+import { useEffect, useState } from 'react';
 
 function App() {
+  
+
   return (
     <div className="App">
     <h1>D3 Node Visualization</h1>
-    <Visualization data={{
-  entities: [
-    {
-      name: "T1I1 Trial",
-      type: "clinical-trial",
-      properties: {
-        stage: "Stage 1",
-      },
-    },
-    {
-      name: "S1 Site",
-      type: "Site-Hospital",
-      properties: {
-        address: "1 Main St",
-      },
-    },
-    // Add more entities as needed
-  ],
-  levels: [
-    {
-      seq: 1,
-      entities: [
-        {
-          name: "T1I1 Trial",
-        },
-        // Add more entities to the level as needed
-      ],
-    },
-  ],
-  connections: [
-    {
-      Start: "T1I1 Trial",
-      End: "S1 Site",
-      Type: "Association-Rect",
-      Properties: {},
-    },
-    // Add more connections as needed
-  ],
-}} />
+    {/* <Visualization data={datajson1} /> */}
+    {/* <Visualization data={datajson2} /> */}
+    <VisualizationIcon data={datajson3} />
   </div>
   );
 }

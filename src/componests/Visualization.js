@@ -2,68 +2,101 @@ import React, { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 
 const Visualization = ({ data }) => {
-  const svgRef = useRef(null);
+  const svgRef = useRef();
 
   useEffect(() => {
-    if (!data || data.entities.length === 0 || !svgRef.current) return;
-
+    // Set up the SVG container
     const svg = d3.select(svgRef.current);
 
-    // Define a tooltip div
-    const tooltip = d3
-      .select('body')
-      .append('div')
-      .attr('class', 'tooltip')
-      .style('opacity', 0);
+    // Extract data from JSON
+    const entities = data.entities;
+    const connections = data.connections;
 
-    // Create circles for entities
-    const circles = svg
-      .selectAll('circle')
-      .data(data.entities)
-      .enter()
-      .append('circle')
-      .attr('cx', (d, i) => i * 200 + 100)
-      .attr('cy', 200)
-      .attr('r', 20)
-      .style('fill', 'blue');
+    // Create nodes and links for D3 force simulation
+    const nodes = entities.map(entity => ({ id: entity.name }));
+    const links = connections.map(connection => ({
+      source: connection.Start,
+      target: connection.End,
+    }));
 
-    // Create lines for connections
-    svg
-      .selectAll('line')
-      .data(data.connections)
+    // Create a D3 force simulation
+    const simulation = d3
+      .forceSimulation(nodes)
+      .force('link', d3.forceLink(links).id(d => d.id))
+      .force('charge', d3.forceManyBody().strength(-120))
+      .force('center', d3.forceCenter(400, 200));
+
+    // Create links
+    const link = svg
+      .selectAll('.link')
+      .data(links)
       .enter()
       .append('line')
-      .attr('x1', (d) => {
-        const startEntity = data.entities.find((entity) => entity.name === d.Start);
-        return startEntity ? data.entities.indexOf(startEntity) * 200 + 100 : 0;
-      })
-      .attr('y1', 200)
-      .attr('x2', (d) => {
-        const endEntity = data.entities.find((entity) => entity.name === d.End);
-        return endEntity ? data.entities.indexOf(endEntity) * 200 + 100 : 0;
-      })
-      .attr('y2', 200)
-      .style('stroke', 'red');
+      .attr('class', 'link')
+      .attr('stroke', 'red'); // Set the link color to red
 
-    // Add tooltips on hover
-    circles
-      .on('mouseover', (event, d) => {
-        tooltip.transition().duration(200).style('opacity', 0.9);
-        tooltip
-          .html(`<strong>${d.name}</strong><br />${JSON.stringify(d.properties, null, 2)}`)
-          .style('left', d3.pointer(event)[0] + 'px')
-          .style('top', d3.pointer(event)[1] - 28 + 'px');
-      })
-      .on('mouseout', () => {
-        tooltip.transition().duration(1000).style('opacity', 0);
-      });
+    // Create nodes
+    const node = svg
+      .selectAll('.node')
+      .data(nodes)
+      .enter()
+      .append('g')
+      .attr('class', 'node');
 
-    // Additional D3 logic for your visualization
+    // Add circles to represent nodes
+    node
+      .append('circle')
+      .attr('r', 10)
+      .attr('fill', 'lightblue');
 
+    // Add text labels to nodes
+    node
+      .append('text')
+      .text(d => d.id)
+      .attr('text-anchor', 'middle')
+      .attr('dy', '0.2em')
+      .attr('fill', 'black');
+
+    // // Add icons inside the circle nodes
+    // node
+    // .append('image')
+    // .attr('xlink:href', d => d.iconUrl)
+    // .attr('x', -16) // Adjust the x-position to center the icon
+    // .attr('y', -16) // Adjust the y-position to center the icon
+    // .attr('width', 32) // Set the icon width
+    // .attr('height', 32); // Set the icon height
+
+
+    // Add distances between nodes
+    const distanceLines = svg
+      .selectAll('.distance')
+      .data(connections)
+      .enter()
+      .append('line')
+      .attr('class', 'distance')
+      .attr('stroke', 'gray') // Set the distance line color to gray
+      .attr('stroke-dasharray', '10,10'); // Make the distance line dashed
+
+    // Update node positions and distance line positions on each tick of the simulation
+    simulation.on('tick', () => {
+      node.attr('transform', d => `translate(${d.x},${d.y})`);
+      link
+        .attr('x1', d => d.source.x)
+        .attr('y1', d => d.source.y)
+        .attr('x2', d => d.target.x)
+        .attr('y2', d => d.target.y);
+      
+      // Update the positions of distance lines
+      distanceLines
+        .attr('x1', d => simulation.nodes().find(node => node.id === d.Start).x)
+        .attr('y1', d => simulation.nodes().find(node => node.id === d.Start).y)
+        .attr('x2', d => simulation.nodes().find(node => node.id === d.End).x)
+        .attr('y2', d => simulation.nodes().find(node => node.id === d.End).y);
+    });
   }, [data]);
 
   return (
-    <svg ref={svgRef} width={800} height={300}>
+    <svg width="800" height="400" ref={svgRef}>
       {/* SVG container */}
     </svg>
   );
